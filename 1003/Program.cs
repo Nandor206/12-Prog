@@ -37,12 +37,19 @@ namespace _1003
 
             BasicInfo();
 
-            Console.WriteLine("Újat szeretnél kezdeni? (Y/n)");
-            switch (Console.ReadLine()!.ToUpper())
+            Console.WriteLine("Újat rajzot szeretnél kezdeni? (Y/n)");
+            string input = Console.ReadLine()!.ToUpper().Trim();
+            while (input != "Y" && input != "N")
+            {
+                Console.Write("Kérlek próbáld újra: ");
+                input = Console.ReadLine()!.ToUpper();
+            }
+            switch (input)
             {
                 case "Y": New(); listOverWrite((int)info.background); break;
                 case "N": LoadFile(); break;
             }
+
 
             while (true)
             {
@@ -121,6 +128,12 @@ namespace _1003
             {
                 Console.Write(' ');
                 Console.SetCursorPosition(info.CursorX, info.CursorY);
+                //shadesArray[info.CursorX, info.CursorY] = '\0';
+            }
+            if (pen == PenStatus.Eraser)
+            {
+                Console.Write(' ');
+                Console.SetCursorPosition(info.CursorX, info.CursorY);
                 shadesArray[info.CursorX, info.CursorY] = '\0';
             }
         }
@@ -176,9 +189,6 @@ namespace _1003
 
             Console.WriteLine("\nKnown bug: ha kirakod nagyba a programot míg a kurzor színe más pl. kék akkor az egész kék lesz.");
 
-            Console.WriteLine("\nNyomj meg egy gombot, hogy kezdj.");
-            Console.ReadKey();
-
             Console.Title = "PixelArt maker";
         }
 
@@ -215,7 +225,7 @@ namespace _1003
             {
                 Console.WriteLine($"{i} - {(ConsoleColor)i}");
             }
-            Console.Write("Írd ide a színhez kapcsolódó számot a kiválasztáshoz: ");
+            Console.Write("\nÍrd ide a színhez kapcsolódó számot a kiválasztáshoz: ");
             int num = 0;
             try
             {
@@ -239,10 +249,11 @@ namespace _1003
             Console.SetCursorPosition(0, 0);
             Console.BackgroundColor = ConsoleColor.Black;
             Console.ForegroundColor = ConsoleColor.White;
+            Console.Clear();
             Console.WriteLine("Milyen néven van mentve a fájl?");
             Console.Write("Kérlek írd ide: ");
             Read(Console.ReadLine()!);
-            
+
             KurzorSzin(info.cursorColor);
         }
 

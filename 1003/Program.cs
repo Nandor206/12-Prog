@@ -25,8 +25,8 @@ namespace _1003
         static DATA info = new DATA();
         static PenStatus pen = PenStatus.Up;
         static ConsoleColor[,] foregroundsArray = new ConsoleColor[Console.WindowHeight, Console.WindowWidth];
-        static char[,] shadesArray = new char[Console.WindowHeight, Console.WindowWidth];
-        static char[] shades = ['█', '▓', '▒', '░'];
+        static char[,] opacityArray = new char[Console.WindowHeight, Console.WindowWidth];
+        static char[] opacity = ['█', '▓', '▒', '░'];
 
         static void Main(string[] args)
         {
@@ -68,7 +68,7 @@ namespace _1003
                         szinChange();
                         if (pen == PenStatus.Down)
                         {
-                            Console.Write("\b"+shades[info.opacity]);
+                            Console.Write(opacity[info.opacity]+"\b");
                         }
                         break;
 
@@ -80,7 +80,7 @@ namespace _1003
                         opacityChange();
                         if (pen == PenStatus.Down)
                         {
-                            Console.Write(shades[info.opacity] + "\b");
+                            Console.Write(opacity[info.opacity] + "\b");
                         }
                         else
                         {
@@ -92,7 +92,7 @@ namespace _1003
                         pen = pen == PenStatus.Down ? PenStatus.Up : PenStatus.Down;
                         if (pen == PenStatus.Down)
                         {
-                            Console.Write("\b" + shades[info.opacity] + "\b");
+                            Console.Write("\b" + opacity[info.opacity] + "\b");
                         }
                         else
                         {
@@ -153,10 +153,10 @@ namespace _1003
 
             if (pen == PenStatus.Down)
             {
-                Console.Write(shades[info.opacity]);
+                Console.Write(opacity[info.opacity]);
                 Console.SetCursorPosition(info.CursorX, info.CursorY);
                 foregroundsArray[info.CursorY, info.CursorX] = info.cursorColor;
-                shadesArray[info.CursorY, info.CursorX] = shades[info.opacity];
+                opacityArray[info.CursorY, info.CursorX] = opacity[info.opacity];
             }
             if (pen == PenStatus.Up)
             {
@@ -166,7 +166,7 @@ namespace _1003
             {
                 Console.Write(' ');
                 Console.SetCursorPosition(info.CursorX, info.CursorY);
-                shadesArray[info.CursorY, info.CursorX] = ' ';
+                opacityArray[info.CursorY, info.CursorX] = ' ';
             }
         }
 
@@ -187,7 +187,7 @@ namespace _1003
             Console.ForegroundColor = info.cursorColor;
             if (pen == PenStatus.Down)
             {
-                Console.Write(shades[info.opacity]);
+                Console.Write(opacity[info.opacity]);
             }
         }
 
@@ -214,11 +214,11 @@ namespace _1003
 
             if (pen == PenStatus.Eraser)
             {
-                Console.Write("A radír be van kapcsolva ");
+                Console.Write("A radír be van kapcsolva");
             }
             else
             {
-                Console.Write("                         ");
+                Console.Write("A kurzor felvan engedve ");
             }
 
             Console.SetCursorPosition(info.CursorX, info.CursorY);
@@ -382,7 +382,7 @@ namespace _1003
                 for (int j = 0; j < foregroundsArray.GetLength(1); j++)
                 {
                     foregroundColors[i].Add(foregroundsArray[i, j]);
-                    Opacities[i].Add(shadesArray[i, j]);
+                    Opacities[i].Add(opacityArray[i, j]);
                 }
             }
 
@@ -429,7 +429,7 @@ namespace _1003
                         Console.ForegroundColor = info.foregrounds[i][j];
                         Console.Write(info.shades[i][j]);
                         foregroundsArray[i, j] = info.foregrounds[i][j];
-                        shadesArray[i, j] = info.shades[i][j];
+                        opacityArray[i, j] = info.shades[i][j];
                     }
                 }
             }

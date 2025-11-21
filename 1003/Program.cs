@@ -68,7 +68,7 @@ namespace _1003
                         szinChange();
                         if (pen == PenStatus.Down)
                         {
-                            Console.Write(shades[info.opacity] + "\b");
+                            Console.Write("\b"+shades[info.opacity]);
                         }
                         break;
 
@@ -98,6 +98,7 @@ namespace _1003
                         {
                             Console.Write("\b \b");
                         }
+                        Toll();
                         break;
 
                     case ConsoleKey.H:
@@ -253,13 +254,13 @@ namespace _1003
             Console.WriteLine("Köszönöm támogatásod éshogy megvetted ezt a játékot.");
             Console.WriteLine("\nW-vel kezdesz új lapot, szóközzel váltasz színt (16 szín van) és G-vel rakod le a tollat illetve emeled fel.");
             Console.WriteLine("H-val kapcsolod a radírt, Q-val a kurzor áttetszőségét.");
-            Console.WriteLine("Nyilakkal mozogsz, és bárhol tudsz rajzolni.\n");
+            Console.WriteLine("Nyilakkal mozogsz, és bárhol tudsz rajzolni. Ha középre akarsz jutni nyomd meg az Enter-t.\n");
             Console.WriteLine("Menteni az S betűvel tudsz, mentést megnyitni az alkalmazás indításakor tudsz.");
             Console.WriteLine("Ezeket a a fájlokat .rajz kiterjesztéssel menti a program a dokumentumokba.");
 
             Console.WriteLine("\nKnown bug: ha kirakod nagyba a programot míg a kurzor színe más pl. kék akkor az egész kék lesz.");
 
-            Console.Title = "Rajz maker 2006";
+            Console.Title = "Rajz maker v0.16";
         }
 
         static void szinChange()
@@ -307,10 +308,10 @@ namespace _1003
             Console.BackgroundColor = (ConsoleColor)num;
             Console.Clear();
             Console.SetCursorPosition(Console.WindowWidth / 2, Console.WindowHeight / 2);
-            UI();
+            TUI();
         }
 
-        static void UI()
+        static void TUI()
         {
             Console.SetCursorPosition(0, Console.WindowHeight - 2);
             Console.ForegroundColor = ConsoleColor.Black;
@@ -336,6 +337,7 @@ namespace _1003
             }
             KurzorSzin();
             KurzorOpacityLevel();
+            Toll();
         }
 
         static void LoadFile()
@@ -357,7 +359,7 @@ namespace _1003
                 path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), filename + ".rajz");
             }
             Read(path);
-            UI();
+            TUI();
 
             if (info.CursorY >= Console.WindowHeight - 2)
             {

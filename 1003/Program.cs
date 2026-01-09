@@ -1,6 +1,4 @@
-﻿using System.Text.Json;
-
-namespace _1003
+﻿namespace _1003
 {
 
     class Pixel
@@ -9,10 +7,10 @@ namespace _1003
         public int Y { get; set; }
         public ConsoleColor Background { get; set; }
         public ConsoleColor Foreground { get; set; }
-        public char Symbol { get; set; }
+        public int Symbol { get; set; }
         public string ToCsvLine()
         {
-            return $"{X},{Y},{Foreground},{Background},{Symbol}";
+            return $"{X},{Y},{(int)Foreground},{(int)Background},{Symbol}";
         }
         public static Pixel FromCsvLine(string csvLine)
         {
@@ -23,7 +21,7 @@ namespace _1003
                 Y = int.Parse(splits[1]),
                 Foreground = (ConsoleColor)int.Parse(splits[2]),
                 Background = (ConsoleColor)int.Parse(splits[3]),
-                Symbol = splits[4][0]
+                Symbol = int.Parse(splits[4])
             };
         }
     }
@@ -44,7 +42,7 @@ namespace _1003
 
         static PenStatus Pen = PenStatus.Up;
         static ConsoleColor[,] ForegroundsArray = new ConsoleColor[Console.WindowWidth, Console.WindowHeight];
-        static char[,] SymbolArray = new char[Console.WindowWidth, Console.WindowHeight];
+        static int[,] SymbolArray = new int[Console.WindowWidth, Console.WindowHeight];
 
         static char[] Opacities = ['█', '▓', '▒', '░'];
 
@@ -82,7 +80,7 @@ namespace _1003
                         szinChange();
                         if (Pen == PenStatus.Down)
                         {
-                            Console.Write("\b" + Opacities[SelectedOpacity] + "\b");
+                            Console.Write(Opacities[SelectedOpacity] + "\b");
                         }
                         break;
 
@@ -151,8 +149,8 @@ namespace _1003
         static void Move(int x, int y)
         {
             (CursorX, CursorY) = Console.GetCursorPosition();
-            int newY = CursorY + y;
             int newX = CursorX + x;
+            int newY = CursorY + y;
 
             if (newY == Console.WindowHeight - 2 || newY == -1)
             {
@@ -169,8 +167,8 @@ namespace _1003
             {
                 Console.Write(Opacities[SelectedOpacity]);
                 Console.SetCursorPosition(CursorX, CursorY);
-                ForegroundsArray[CursorY, CursorX] = CursorColor;
-                SymbolArray[CursorX, CursorY] = Opacities[SelectedOpacity];
+                ForegroundsArray[CursorX, CursorY] = CursorColor;
+                SymbolArray[CursorX, CursorY] = SelectedOpacity;
             }
             if (Pen == PenStatus.Up)
             {
@@ -180,7 +178,7 @@ namespace _1003
             {
                 Console.Write(' ');
                 Console.SetCursorPosition(CursorX, CursorY);
-                SymbolArray[CursorY, CursorX] = ' ';
+                SymbolArray[CursorX, CursorY] = '\0';
             }
         }
 
@@ -320,6 +318,14 @@ namespace _1003
                 }
             }
             Console.BackgroundColor = (ConsoleColor)num;
+            for (int i = 0; i < Console.WindowWidth; i++)
+            {
+                for (int j = 0; j < Console.WindowHeight; j++)
+                {
+                    ForegroundsArray[i, j] = Console.BackgroundColor;
+                }
+            }
+
             Console.Clear();
             Console.SetCursorPosition(Console.WindowWidth / 2, Console.WindowHeight / 2);
             TUI();
@@ -372,7 +378,7 @@ namespace _1003
                 filename = Console.ReadLine()!;
                 path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), filename + ".rajz");
             }
-            //Read(path);
+            Read(path);
             TUI();
 
             if (CursorY >= Console.WindowHeight - 2 || CursorY < 0 || CursorX >= Console.WindowWidth || CursorX < 0)
@@ -394,17 +400,17 @@ namespace _1003
 
             string save_data = "";
 
-            for (int i = 0; i < ForegroundsArray.GetLength(0) - 1; i++)
+            for (int i = 0; i < Console.WindowWidth; i++)
             {
-                for (int j = 0; i < ForegroundsArray.GetLength(1) - 1; i++)
+                for (int j = 0; j < Console.WindowHeight; j++)
                 {
-                    if (ForegroundsArray[i, j] == 0 && SymbolArray[i, j] == '\0')
+                    if (ForegroundsArray[i, j] == Console.BackgroundColor)
                     {
                         continue;
                     }
                     else
                     {
-Pixel pixel = new Pixel()
+                        Pixel pixel = new Pixel()
                         {
                             X = i,
                             Y = j,
@@ -412,47 +418,35 @@ Pixel pixel = new Pixel()
                             Foreground = ForegroundsArray[i, j],
                             Symbol = SymbolArray[i, j]
                         };
-                    }
-                    using (StreamWriter sw = new StreamWriter(path))
-                    {
-                        
-                        sw.WriteLine(pixel.ToCsvLine());
+                        save_data += pixel.ToCsvLine();
+                        save_data += "\n";
                     }
                 }
             }
+            
+            File.WriteAllText(path, save_data);
 
             Console.WriteLine("Sikeres mentés");
             Thread.Sleep(500);
             Environment.Exit(0);
         }
 
-        //static void Read(string path)
-        //{
-        //    string file = File.ReadAllText(path);
-        //    Current data = JsonSerializer.Deserialize<Current>(file);
+        static void Read(string path)
+        {
+            var lines = File.ReadAllLines(path);
+            BackgroundColor = Pixel.FromCsvLine(lines[0]).Background;
+            Console.BackgroundColor = BackgroundColor;
+            Console.Clear();
 
-        //    info = data;
-        //    Console.Clear();
-        //    Console.SetCursorPosition(0, 0);
-        //    Console.BackgroundColor = BackgroundColor;
-
-        //    for (int i = 0; i < info.Foregrounds.Count; i++)
-        //    {
-        //        for (int j = 0; j < info.Foregrounds[i].Count; j++)
-        //        {
-        //            if (info.Shades[i][j] == ' ' || info.Shades[i][j] == '\0')
-        //            {
-        //                Console.Write(" ");
-        //            }
-        //            else
-        //            {
-        //                Console.ForegroundColor = info.Foregrounds[i][j];
-        //                Console.Write(info.Shades[i][j]);
-        //                ForegroundsArray[i, j] = info.Foregrounds[i][j];
-        //                SymbolArray[i, j] = info.Shades[i][j];
-        //            }
-        //        }
-        //    }
-        //}
+            foreach (var line in lines)
+            {
+                var pixel = Pixel.FromCsvLine(line);
+                Console.SetCursorPosition(pixel.X, pixel.Y);
+                Console.ForegroundColor = pixel.Foreground;
+                Console.Write(Opacities[pixel.Symbol]);
+                ForegroundsArray[pixel.X, pixel.Y] = pixel.Foreground;
+                SymbolArray[pixel.X, pixel.Y] = pixel.Symbol;
+            }
+        }
     }
 }

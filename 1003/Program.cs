@@ -24,6 +24,37 @@
                 Symbol = int.Parse(splits[4])
             };
         }
+
+        public static byte[] ToBytes(Pixel pixel)
+        {
+            byte[] X = BitConverter.GetBytes(pixel.X);
+            byte[] Y = BitConverter.GetBytes(pixel.Y);
+            byte[] Background = BitConverter.GetBytes((int)pixel.Background);
+            byte[] Foreground = BitConverter.GetBytes((int)pixel.Foreground);
+            byte[] Symbol = BitConverter.GetBytes(pixel.Symbol);
+
+            byte[] bytes = new byte[X.Length + Y.Length + Background.Length + Foreground.Length + Symbol.Length];
+            X.CopyTo(bytes, 0);
+            Y.CopyTo(bytes, X.Length);
+            Background.CopyTo(bytes, X.Length + Y.Length);
+            Foreground.CopyTo(bytes, X.Length + Y.Length + Background.Length);
+            Symbol.CopyTo(bytes, X.Length + Y.Length + Background.Length + Foreground.Length);
+            
+            return bytes;
+        }
+
+        public static Pixel FromBytes(byte[] bytes)
+        {
+            return new Pixel()
+            {
+                X = BitConverter.ToInt32(bytes, 0),
+                Y = BitConverter.ToInt32(bytes, 4),
+                Background = (ConsoleColor)BitConverter.ToInt32(bytes, 8),
+                Foreground = (ConsoleColor)BitConverter.ToInt32(bytes, 12),
+                Symbol = BitConverter.ToInt32(bytes, 16)
+            };
+        }
+
     }
     internal class Program
     {
@@ -34,20 +65,22 @@
             Eraser
         }
 
-        static int CursorX = Console.WindowWidth / 2;
-        static int CursorY = Console.WindowHeight / 2;
+        static int CursorX = (Console.LargestWindowWidth - 1) / 2;
+        static int CursorY = (Console.LargestWindowHeight - 1) / 2;
         static int SelectedOpacity = 0;
         static ConsoleColor BackgroundColor = ConsoleColor.White;
         static ConsoleColor CursorColor = ConsoleColor.Black;
 
         static PenStatus Pen = PenStatus.Up;
-        static ConsoleColor[,] ForegroundsArray = new ConsoleColor[Console.WindowWidth, Console.WindowHeight];
-        static int[,] SymbolArray = new int[Console.WindowWidth, Console.WindowHeight];
+        static ConsoleColor[,] ForegroundsArray = new ConsoleColor[Console.LargestWindowWidth - 1, Console.LargestWindowHeight - 1];
+        static int[,] SymbolArray = new int[Console.LargestWindowWidth - 1, Console.LargestWindowHeight - 1];
 
         static char[] Opacities = ['█', '▓', '▒', '░'];
 
         static void Main(string[] args)
         {
+            Console.SetWindowSize(Console.LargestWindowWidth - 1, Console.LargestWindowHeight - 1);
+            
             BasicInfo();
 
             Console.WriteLine("Újat rajzot szeretnél kezdeni? (Y/n)");
@@ -80,62 +113,42 @@
                         szinChange();
                         if (Pen == PenStatus.Down)
                         {
-                            Console.Write(Opacities[SelectedOpacity] + "\b");
+                            Console.Write("\b" + Opacities[SelectedOpacity] + "\b");
                         }
                         break;
 
-                    case ConsoleKey.W:
+                    case ConsoleKey.F1:
                         New();
                         break;
 
-                    case ConsoleKey.Q:
+                    case ConsoleKey.F3:
                         opacityChange();
                         if (Pen == PenStatus.Down)
                         {
                             Console.Write(Opacities[SelectedOpacity] + "\b");
                         }
-                        else
-                        {
-                            Console.Write("\b  \b");
-                        }
                         break;
 
-                    case ConsoleKey.G:
-                        Pen = Pen == PenStatus.Down ? PenStatus.Up : PenStatus.Down;
+                    case ConsoleKey.F4:
+                        Pen = Pen == (PenStatus)2 ? PenStatus.Up : Pen += 1;
                         if (Pen == PenStatus.Down)
                         {
-                            Console.Write("\b" + Opacities[SelectedOpacity] + "\b");
-                        }
-                        else
-                        {
-                            Console.Write("\b \b");
+                            Console.Write(Opacities[SelectedOpacity] + "\b");
                         }
                         Toll();
                         break;
 
-                    case ConsoleKey.H:
-                        if (Pen == PenStatus.Down || Pen == PenStatus.Up)
-                        {
-                            Pen = PenStatus.Eraser;
-                        }
-                        else
-                        {
-                            Pen = PenStatus.Up;
-                        }
-                        Radir();
-                        Console.Write("\b  \b");
-                        break;
-
-                    case ConsoleKey.Enter:
+                    case ConsoleKey.F2:
                         Console.SetCursorPosition(Console.WindowWidth / 2, Console.WindowHeight / 2);
                         break;
-                    case ConsoleKey.S:
+
+                    case ConsoleKey.Escape:
                         Console.SetCursorPosition(0, Console.WindowHeight / 2);
                         Console.BackgroundColor = ConsoleColor.White;
                         Console.ForegroundColor = ConsoleColor.Black;
                         Console.WriteLine("Milyen néven mentsem a fájlt?");
                         Console.Write("Kérlek írd ide: ");
-                        Save(Console.ReadLine()!);
+                        SaveToBin(Console.ReadLine()!);
                         break;
 
                     case ConsoleKey:
@@ -178,7 +191,7 @@
             {
                 Console.Write(' ');
                 Console.SetCursorPosition(CursorX, CursorY);
-                SymbolArray[CursorX, CursorY] = '\0';
+                SymbolArray[CursorX, CursorY] = (int)BackgroundColor;
             }
         }
 
@@ -217,26 +230,6 @@
             Console.ForegroundColor = CursorColor;
         }
 
-        static void Radir()
-        {
-            Console.CursorTop = Console.WindowHeight - 1;
-            Console.CursorLeft = 47;
-            Console.BackgroundColor = ConsoleColor.White;
-            Console.ForegroundColor = ConsoleColor.Black;
-
-            if (Pen == PenStatus.Eraser)
-            {
-                Console.Write("A radír be van kapcsolva");
-            }
-            else
-            {
-                Console.Write("A kurzor felvan engedve ");
-            }
-
-            Console.SetCursorPosition(CursorX, CursorY);
-            Console.BackgroundColor = BackgroundColor;
-        }
-
         static void Toll()
         {
             Console.CursorTop = Console.WindowHeight - 1;
@@ -252,6 +245,10 @@
             {
                 Console.Write("A kurzor felvan engedve ");
             }
+            else
+            {
+                Console.Write("A radír be van kapcsolva");
+            }
 
             Console.SetCursorPosition(CursorX, CursorY);
             Console.BackgroundColor = BackgroundColor;
@@ -264,13 +261,14 @@
             Console.Clear();
             Console.WriteLine("Szimpla pixelart-os program.");
             Console.WriteLine("Köszönöm támogatásod éshogy megvetted ezt a játékot.");
-            Console.WriteLine("\nW-vel kezdesz új lapot, szóközzel váltasz színt (16 szín van) és G-vel rakod le a tollat illetve emeled fel.");
-            Console.WriteLine("H-val kapcsolod a radírt, Q-val a kurzor áttetszőségét.");
-            Console.WriteLine("Nyilakkal mozogsz, és bárhol tudsz rajzolni. Ha középre akarsz jutni nyomd meg az Enter-t.\n");
-            Console.WriteLine("Menteni az S betűvel tudsz, mentést megnyitni az alkalmazás indításakor tudsz.");
+            Console.WriteLine("Kérlek tedd az ablakot fullscreenbe a legjobb használatért.");
+            Console.WriteLine("\nF1-gyel kezdesz új lapot, szóközzel váltasz színt (16 szín van) és F4-gyel váltasz a toll funkciói között: le, fel, radír.");
+            Console.WriteLine("F3-mal változtatod a kurzor áttetszőségét.");
+            Console.WriteLine("Nyilakkal mozogsz, és bárhol tudsz rajzolni. Ha középre akarsz jutni gyorsan nyomd meg az F2-t.\n");
+            Console.WriteLine("Menteni az Escape (ESC) gombbal tudsz, mentést megnyitni pedig az alkalmazás indításakor tudsz.");
             Console.WriteLine("Ezeket a a fájlokat .rajz kiterjesztéssel menti a program a dokumentumokba.");
 
-            Console.WriteLine("\nKnown bug: ha kirakod nagyba a programot míg a kurzor színe más pl. kék akkor az egész kék lesz.");
+            //Console.WriteLine("\nKnown bug: ha kirakod nagyba a programot míg a kurzor színe más pl. kék akkor az egész kék lesz.");
 
             Console.Title = "Rajz maker v0.16";
         }
@@ -318,9 +316,9 @@
                 }
             }
             Console.BackgroundColor = (ConsoleColor)num;
-            for (int i = 0; i < Console.WindowWidth; i++)
+            for (int i = 0; i < Console.WindowWidth - 1; i++)
             {
-                for (int j = 0; j < Console.WindowHeight; j++)
+                for (int j = 0; j < Console.WindowHeight - 1; j++)
                 {
                     ForegroundsArray[i, j] = Console.BackgroundColor;
                 }
@@ -378,7 +376,7 @@
                 filename = Console.ReadLine()!;
                 path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), filename + ".rajz");
             }
-            Read(path);
+            ReadFromBin(path);
             TUI();
 
             if (CursorY >= Console.WindowHeight - 2 || CursorY < 0 || CursorX >= Console.WindowWidth || CursorX < 0)
@@ -389,7 +387,7 @@
 
         }
 
-        static void Save(string filename)
+        static void SaveToCsv(string filename)
         {
             string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), filename + ".rajz");
 
@@ -431,16 +429,99 @@
             Environment.Exit(0);
         }
 
-        static void Read(string path)
+        static void ReadFromCsv(string path)
         {
             var lines = File.ReadAllLines(path);
             BackgroundColor = Pixel.FromCsvLine(lines[0]).Background;
             Console.BackgroundColor = BackgroundColor;
             Console.Clear();
 
+            for (int i = 0; i < Console.WindowWidth; i++)
+            {
+                for (int j = 0; j < Console.WindowHeight; j++)
+                {
+                    ForegroundsArray[i, j] = Console.BackgroundColor;
+                }
+            }
+
             foreach (var line in lines)
             {
                 var pixel = Pixel.FromCsvLine(line);
+                Console.SetCursorPosition(pixel.X, pixel.Y);
+                Console.ForegroundColor = pixel.Foreground;
+                Console.Write(Opacities[pixel.Symbol]);
+                ForegroundsArray[pixel.X, pixel.Y] = pixel.Foreground;
+                SymbolArray[pixel.X, pixel.Y] = pixel.Symbol;
+            }
+        }
+
+        static void SaveToBin(string filename)
+        {
+            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), filename + ".rajz");
+
+            if (!File.Exists(path))
+            {
+                File.Create(path).Close();
+            }
+
+            List<byte> save_data = new List<byte>();
+
+            for (int i = 0; i < Console.WindowWidth - 1; i++)
+            {
+                for (int j = 0; j < Console.WindowHeight - 1; j++)
+                {
+                    if (ForegroundsArray[i, j] == Console.BackgroundColor)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        Pixel pixel = new Pixel()
+                        {
+                            X = i,
+                            Y = j,
+                            Background = BackgroundColor,
+                            Foreground = ForegroundsArray[i, j],
+                            Symbol = SymbolArray[i, j]
+                        };
+                        save_data.AddRange(Pixel.ToBytes(pixel));
+                    }
+                }
+            }
+
+            File.WriteAllBytes(path, save_data.ToArray());
+
+            Console.WriteLine("Sikeres mentés");
+            Thread.Sleep(500);
+            Environment.Exit(0);
+        }
+
+        static void ReadFromBin(string path)
+        {
+            var bytes = File.ReadAllBytes(path);
+
+            byte[] temp = new byte[20];
+            Array.Copy(bytes, 0, temp, 0, 20);
+
+
+            BackgroundColor = Pixel.FromBytes(temp).Background;
+            Console.BackgroundColor = BackgroundColor;
+            Console.Clear();
+
+            for (int i = 0; i < Console.WindowWidth - 1; i++)
+            {
+                for (int j = 0; j < Console.WindowHeight - 1; j++)
+                {
+                    ForegroundsArray[i, j] = Console.BackgroundColor;
+                }
+            }
+
+            int PixelSzam = bytes.Length / 20;
+
+            for (int i = 0; i < PixelSzam; i++)
+            {
+                Array.Copy(bytes, i * 20, temp, 0, 20);
+                var pixel = Pixel.FromBytes(temp);
                 Console.SetCursorPosition(pixel.X, pixel.Y);
                 Console.ForegroundColor = pixel.Foreground;
                 Console.Write(Opacities[pixel.Symbol]);

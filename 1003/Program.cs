@@ -3,11 +3,11 @@
 
     class Pixel
     {
-        public int X { get; set; }
-        public int Y { get; set; }
+        public byte X { get; set; }
+        public byte Y { get; set; }
         public ConsoleColor Background { get; set; }
         public ConsoleColor Foreground { get; set; }
-        public int Symbol { get; set; }
+        public byte Symbol { get; set; }
         public string ToCsvLine()
         {
             return $"{X},{Y},{(int)Foreground},{(int)Background},{Symbol}";
@@ -17,28 +17,17 @@
             var splits = csvLine.Split(',');
             return new Pixel()
             {
-                X = int.Parse(splits[0]),
-                Y = int.Parse(splits[1]),
+                X = byte.Parse(splits[0]),
+                Y = byte.Parse(splits[1]),
                 Foreground = (ConsoleColor)int.Parse(splits[2]),
                 Background = (ConsoleColor)int.Parse(splits[3]),
-                Symbol = int.Parse(splits[4])
+                Symbol = byte.Parse(splits[4])
             };
         }
 
         public static byte[] ToBytes(Pixel pixel)
         {
-            byte[] X = BitConverter.GetBytes(pixel.X);
-            byte[] Y = BitConverter.GetBytes(pixel.Y);
-            byte[] Background = BitConverter.GetBytes((int)pixel.Background);
-            byte[] Foreground = BitConverter.GetBytes((int)pixel.Foreground);
-            byte[] Symbol = BitConverter.GetBytes(pixel.Symbol);
-
-            byte[] bytes = new byte[X.Length + Y.Length + Background.Length + Foreground.Length + Symbol.Length];
-            X.CopyTo(bytes, 0);
-            Y.CopyTo(bytes, X.Length);
-            Background.CopyTo(bytes, X.Length + Y.Length);
-            Foreground.CopyTo(bytes, X.Length + Y.Length + Background.Length);
-            Symbol.CopyTo(bytes, X.Length + Y.Length + Background.Length + Foreground.Length);
+            byte[] bytes = {pixel.X, pixel.Y, (byte)pixel.Background, (byte)pixel.Foreground, pixel.Symbol};
             
             return bytes;
         }
@@ -47,11 +36,11 @@
         {
             return new Pixel()
             {
-                X = BitConverter.ToInt32(bytes, 0),
-                Y = BitConverter.ToInt32(bytes, 4),
-                Background = (ConsoleColor)BitConverter.ToInt32(bytes, 8),
-                Foreground = (ConsoleColor)BitConverter.ToInt32(bytes, 12),
-                Symbol = BitConverter.ToInt32(bytes, 16)
+                X = bytes[0],
+                Y = bytes[1],
+                Background = (ConsoleColor)bytes[2],
+                Foreground = (ConsoleColor)bytes[3],
+                Symbol = bytes[4]
             };
         }
 
@@ -191,7 +180,8 @@
             {
                 Console.Write(' ');
                 Console.SetCursorPosition(CursorX, CursorY);
-                SymbolArray[CursorX, CursorY] = (int)BackgroundColor;
+                SymbolArray[CursorX, CursorY] = 0;
+                ForegroundsArray[CursorX, CursorY] = BackgroundColor;
             }
         }
 
@@ -398,9 +388,9 @@
 
             string save_data = "";
 
-            for (int i = 0; i < Console.WindowWidth; i++)
+            for (byte i = 0; i < Console.WindowWidth; i++)
             {
-                for (int j = 0; j < Console.WindowHeight; j++)
+                for (byte j = 0; j < Console.WindowHeight; j++)
                 {
                     if (ForegroundsArray[i, j] == Console.BackgroundColor)
                     {
@@ -414,7 +404,7 @@
                             Y = j,
                             Background = BackgroundColor,
                             Foreground = ForegroundsArray[i, j],
-                            Symbol = SymbolArray[i, j]
+                            Symbol = (byte)SymbolArray[i, j]
                         };
                         save_data += pixel.ToCsvLine();
                         save_data += "\n";
@@ -466,9 +456,9 @@
 
             List<byte> save_data = new List<byte>();
 
-            for (int i = 0; i < Console.WindowWidth - 1; i++)
+            for (byte i = 0; i < Console.WindowWidth - 1; i++)
             {
-                for (int j = 0; j < Console.WindowHeight - 1; j++)
+                for (byte j = 0; j < Console.WindowHeight - 1; j++)
                 {
                     if (ForegroundsArray[i, j] == Console.BackgroundColor)
                     {
@@ -482,7 +472,7 @@
                             Y = j,
                             Background = BackgroundColor,
                             Foreground = ForegroundsArray[i, j],
-                            Symbol = SymbolArray[i, j]
+                            Symbol = (byte)SymbolArray[i, j]
                         };
                         save_data.AddRange(Pixel.ToBytes(pixel));
                     }
@@ -500,8 +490,8 @@
         {
             var bytes = File.ReadAllBytes(path);
 
-            byte[] temp = new byte[20];
-            Array.Copy(bytes, 0, temp, 0, 20);
+            byte[] temp = new byte[5];
+            Array.Copy(bytes, 0, temp, 0, 5);
 
 
             BackgroundColor = Pixel.FromBytes(temp).Background;
@@ -516,11 +506,11 @@
                 }
             }
 
-            int PixelSzam = bytes.Length / 20;
+            int PixelSzam = bytes.Length / 5;
 
             for (int i = 0; i < PixelSzam; i++)
             {
-                Array.Copy(bytes, i * 20, temp, 0, 20);
+                Array.Copy(bytes, i * 5, temp, 0, 5);
                 var pixel = Pixel.FromBytes(temp);
                 Console.SetCursorPosition(pixel.X, pixel.Y);
                 Console.ForegroundColor = pixel.Foreground;

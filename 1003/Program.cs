@@ -68,7 +68,17 @@
 
         static void Main(string[] args)
         {
-            Console.SetWindowSize(Console.LargestWindowWidth - 1, Console.LargestWindowHeight - 1);
+                int width = Console.LargestWindowWidth;
+                int height = Console.LargestWindowHeight;
+
+                if (width > 255 || height > 255)
+                {
+                    Console.SetWindowSize(255, 255);
+                }
+                else
+                {
+                    Console.SetWindowSize(width - 1, height - 1);
+                }
             
             BasicInfo();
 
